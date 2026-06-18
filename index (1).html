@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Course Transfer Planner — Lizi Batsiashvili</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #222; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1a3c6e, #2563ab); color: white; padding: 28px 40px; }
+  header h1 { font-size: 1.8rem; font-weight: 700; }
+  header p { margin-top: 6px; opacity: 0.85; font-size: 0.95rem; }
+  .program-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; padding: 5px 16px; margin-top: 10px; font-size: 0.9rem; font-weight: 600; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+  .card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 24px; margin-bottom: 24px; }
+  .card h2 { font-size: 1.1rem; font-weight: 700; color: #1a3c6e; margin-bottom: 16px; border-bottom: 2px solid #e8f0fc; padding-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: #1a3c6e; color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+  td { padding: 9px 14px; border-bottom: 1px solid #eef2f7; }
+  tr:hover td { background: #f5f8ff; }
+  .yes { color: #16a34a; font-weight: 600; }
+  .no { color: #dc2626; font-weight: 600; }
+  .controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  select { padding: 10px 16px; border: 2px solid #d1d9e6; border-radius: 8px; font-size: 0.95rem; background: white; color: #222; cursor: pointer; min-width: 280px; }
+  select:focus { outline: none; border-color: #2563ab; }
+  button { background: linear-gradient(135deg, #1a3c6e, #2563ab); color: white; border: none; padding: 10px 28px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+  button:hover { opacity: 0.9; }
+  #result { display: none; }
+  #result th:first-child { background: #1a5c2e; }
+  #result th:last-child { background: #1a3c6e; }
+  .equiv-yes td:last-child { color: #15803d; font-weight: 500; }
+  .equiv-na td:last-child { color: #9ca3af; font-style: italic; }
+  .info { font-size: 0.85rem; color: #64748b; margin-top: 8px; }
+  .search-bar { margin-bottom: 14px; }
+  .search-bar input { width: 100%; padding: 9px 14px; border: 2px solid #d1d9e6; border-radius: 8px; font-size: 0.9rem; }
+  .search-bar input:focus { outline: none; border-color: #2563ab; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 Course Transfer Planner</h1>
+  <p>Lizi Batsiashvili &nbsp;|&nbsp; Ilia State University</p>
+  <div class="program-badge">Current Program: Civil Engineering (ENG)</div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>🎓 My Courses</h2>
+    <div class="search-bar"><input type="text" id="searchInput" placeholder="Search courses..." oninput="filterTable()"></div>
+    <table id="courseTable">
+      <thead><tr><th>Course</th><th>Passed</th></tr></thead>
+      <tbody id="courseBody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🔄 Transfer to Another Program</h2>
+    <div class="controls">
+      <select id="programSelect">
+        <option value="">— Select a target program —</option>
+        <option value="compeng">Computer Engineering (International)</option>
+        <option value="compsc">Computer Science</option>
+        <option value="eleceng">Electrical and Electronic Engineering</option>
+      </select>
+      <button onclick="transfer()">Transfer</button>
+    </div>
+    <p class="info">Only passed courses are included in the equivalency table.</p>
+  </div>
+
+  <div class="card" id="result">
+    <h2 id="resultTitle">📋 Equivalency Table</h2>
+    <table>
+      <thead><tr><th>Your Civil Engineering Course (Passed)</th><th>Equivalent Course in Target Program</th></tr></thead>
+      <tbody id="equivBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const courses = [
+  { name: "Academic Techniques (ENG)", passed: true },
+  { name: "Calculus I (ENG)", passed: true },
+  { name: "Calculus II (ENG)", passed: true },
+  { name: "Calculus III (ENG)", passed: true },
+  { name: "English Language Course C1-1 (ENG)", passed: true },
+  { name: "English Language Course C1-2 (ENG)", passed: true },
+  { name: "Introduction to Modern Thought I (ENG)", passed: true },
+  { name: "Introduction to Modern Thought II (ENG)", passed: true },
+  { name: "Applied Hydraulics (Including Lab) (ENG)", passed: true },
+  { name: "Applied Mechanics (Statics) (ENG)", passed: true },
+  { name: "Applied Mechanics II (Dynamics) (ENG)", passed: true },
+  { name: "Basics of Physics II (ENG)", passed: true },
+  { name: "Biology for Engineers (ENG)", passed: true },
+  { name: "Civil Engineering Computer Applications (GIS) (ENG)", passed: true },
+  { name: "Civil Engineering and Society (ENG)", passed: false },
+  { name: "Computer Graphics for the Built Environment (ENG)", passed: true },
+  { name: "Construction and Culture (ENG)", passed: true },
+  { name: "Design of Steel Structures (ENG)", passed: false },
+  { name: "Ecology - Ecosystem (ENG)", passed: true },
+  { name: "Economic Thinking (ENG)", passed: true },
+  { name: "Entrepreneurship (ENG)", passed: true },
+  { name: "Environmental Engineering (ENG)", passed: true },
+  { name: "Fluid Mechanics (ENG)", passed: true },
+  { name: "Geotechnical Engineering (Including Lab) (ENG)", passed: true },
+  { name: "Highway Engineering (ENG)", passed: false },
+  { name: "Introduction to Artificial Intelligence (ENG)", passed: false },
+  { name: "Introduction to Civil Engineering (ENG)", passed: true },
+  { name: "Introduction to Engineering Materials (ENG)", passed: true },
+  { name: "Introduction to General Chemistry (ENG)", passed: true },
+  { name: "Introduction to Solid Mechanics (Including Lab) (ENG)", passed: true },
+  { name: "Introduction to Transportation Engineering (ENG)", passed: true },
+  { name: "Numerical Analysis (ENG)", passed: true },
+  { name: "Physics I Including Lab (ENG)", passed: true },
+  { name: "Principles of Engineering Economy (ENG)", passed: true },
+  { name: "Probability and Statistics (ENG)", passed: true },
+  { name: "Project Management for Engineers (ENG)", passed: false },
+  { name: "Reinforced Concrete Design (ENG)", passed: true },
+  { name: "Senior Design Project Conception (ENG)", passed: false },
+  { name: "Soil Mechanics and Foundations (ENG)", passed: true },
+  { name: "Structural Analysis I (ENG)", passed: true },
+  { name: "Structural Analysis II (ENG)", passed: true },
+  { name: "Surveying for Civil Engineering and Construction (ENG)", passed: true },
+  { name: "Water Treatment Engineering (Incl. Wastewater) (ENG)", passed: false },
+  // 5 additional passed courses from Civil Engineering program
+  { name: "Basics of Physics I (Including Lab) (ENG)", passed: true },
+  { name: "Computational and Statistical Methods (ENG)", passed: true },
+  { name: "Introduction to Linear Algebra (ENG)", passed: true },
+  { name: "Principles of Numerical Methods (ENG)", passed: true },
+  { name: "Introduction to Programming (ENG)", passed: true },
+];
+
+// Equivalency maps per target program
+const equivalencies = {
+  compeng: {
+    "Calculus I (ENG)": "Calculus I",
+    "Calculus II (ENG)": "Calculus II",
+    "Calculus III (ENG)": "Calculus III",
+    "English Language Course C1-1 (ENG)": "English Language Course C1-1",
+    "English Language Course C1-2 (ENG)": "English Language Course C1-2",
+    "Introduction to Modern Thought I (ENG)": "Introduction to Modern Thought I",
+    "Academic Techniques (ENG)": "Academic Techniques",
+    "Basics of Physics II (ENG)": "Basics of Physics II",
+    "Introduction to General Chemistry (ENG)": "Introduction to General Chemistry (Including Lab)",
+    "Physics I Including Lab (ENG)": "Basics of Physics I (Including Lab)",
+    "Probability and Statistics (ENG)": "Computational and Statistical Methods",
+    "Numerical Analysis (ENG)": "Principles of Numerical Methods",
+    "Entrepreneurship (ENG)": "Basics of Entrepreneurship",
+    "Introduction to Linear Algebra (ENG)": "Introduction to Linear Algebra",
+    "Introduction to Programming (ENG)": "Introduction to Programming",
+    "Principles of Engineering Economy (ENG)": "N/A",
+    "Applied Mechanics (Statics) (ENG)": "N/A",
+    "Fluid Mechanics (ENG)": "N/A",
+    "Geotechnical Engineering (Including Lab) (ENG)": "N/A",
+    "Reinforced Concrete Design (ENG)": "N/A",
+    "Structural Analysis I (ENG)": "N/A",
+    "Structural Analysis II (ENG)": "N/A",
+    "Environmental Engineering (ENG)": "N/A",
+    "Introduction to Transportation Engineering (ENG)": "N/A",
+    "Soil Mechanics and Foundations (ENG)": "N/A",
+    "Surveying for Civil Engineering and Construction (ENG)": "N/A",
+    "Computational and Statistical Methods (ENG)": "Computational and Statistical Methods",
+    "Principles of Numerical Methods (ENG)": "Principles of Numerical Methods",
+    "Economic Thinking (ENG)": "N/A",
+    "Applied Mechanics II (Dynamics) (ENG)": "N/A",
+    "Applied Hydraulics (Including Lab) (ENG)": "N/A",
+    "Biology for Engineers (ENG)": "N/A",
+    "Civil Engineering Computer Applications (GIS) (ENG)": "N/A",
+    "Computer Graphics for the Built Environment (ENG)": "N/A",
+    "Construction and Culture (ENG)": "N/A",
+    "Ecology - Ecosystem (ENG)": "N/A",
+    "Introduction to Civil Engineering (ENG)": "N/A",
+    "Introduction to Engineering Materials (ENG)": "N/A",
+    "Introduction to Solid Mechanics (Including Lab) (ENG)": "N/A",
+  },
+  compsc: {
+    "Calculus I (ENG)": "Calculus I",
+    "Calculus II (ENG)": "Calculus II",
+    "Calculus III (ENG)": "Calculus III",
+    "English Language Course C1-1 (ENG)": "English Language Course C1-1",
+    "English Language Course C1-2 (ENG)": "English Language Course C1-2",
+    "Introduction to Modern Thought I (ENG)": "Introduction to Modern Thought I",
+    "Academic Techniques (ENG)": "Academic Techniques",
+    "Physics I Including Lab (ENG)": "Basics of Physics I (Including Lab)",
+    "Basics of Physics II (ENG)": "Basics of Physics II",
+    "Probability and Statistics (ENG)": "Computational and Statistical Methods",
+    "Numerical Analysis (ENG)": "Principles of Numerical Methods",
+    "Introduction to Linear Algebra (ENG)": "Introduction to Linear Algebra",
+    "Introduction to Programming (ENG)": "Introduction to Programming",
+    "Entrepreneurship (ENG)": "Basics of Entrepreneurship",
+    "Economic Thinking (ENG)": "N/A",
+    "Computational and Statistical Methods (ENG)": "Computational and Statistical Methods",
+    "Principles of Numerical Methods (ENG)": "Principles of Numerical Methods",
+    "Introduction to General Chemistry (ENG)": "N/A",
+    "Applied Mechanics (Statics) (ENG)": "N/A",
+    "Fluid Mechanics (ENG)": "N/A",
+    "Geotechnical Engineering (Including Lab) (ENG)": "N/A",
+    "Reinforced Concrete Design (ENG)": "N/A",
+    "Structural Analysis I (ENG)": "N/A",
+    "Structural Analysis II (ENG)": "N/A",
+    "Environmental Engineering (ENG)": "N/A",
+    "Introduction to Transportation Engineering (ENG)": "N/A",
+    "Soil Mechanics and Foundations (ENG)": "N/A",
+    "Surveying for Civil Engineering and Construction (ENG)": "N/A",
+    "Principles of Engineering Economy (ENG)": "N/A",
+    "Applied Mechanics II (Dynamics) (ENG)": "N/A",
+    "Applied Hydraulics (Including Lab) (ENG)": "N/A",
+    "Biology for Engineers (ENG)": "N/A",
+    "Civil Engineering Computer Applications (GIS) (ENG)": "N/A",
+    "Computer Graphics for the Built Environment (ENG)": "N/A",
+    "Construction and Culture (ENG)": "N/A",
+    "Ecology - Ecosystem (ENG)": "N/A",
+    "Introduction to Civil Engineering (ENG)": "N/A",
+    "Introduction to Engineering Materials (ENG)": "N/A",
+    "Introduction to Solid Mechanics (Including Lab) (ENG)": "N/A",
+  },
+  eleceng: {
+    "Calculus I (ENG)": "Calculus I",
+    "Calculus II (ENG)": "Calculus II",
+    "Calculus III (ENG)": "Calculus III",
+    "English Language Course C1-1 (ENG)": "English Language Course C1-1",
+    "English Language Course C1-2 (ENG)": "English Language Course C1-2",
+    "Introduction to Modern Thought I (ENG)": "Introduction to Modern Thought I",
+    "Academic Techniques (ENG)": "Academic Techniques",
+    "Basics of Physics II (ENG)": "Basics of Physics II",
+    "Physics I Including Lab (ENG)": "Basics of Physics I (Including Lab)",
+    "Introduction to General Chemistry (ENG)": "Introduction to General Chemistry (Including Lab)",
+    "Probability and Statistics (ENG)": "Computational and Statistical Methods",
+    "Numerical Analysis (ENG)": "Principles of Numerical Methods",
+    "Introduction to Linear Algebra (ENG)": "Introduction to Linear Algebra",
+    "Introduction to Programming (ENG)": "Introduction to Programming",
+    "Entrepreneurship (ENG)": "Basics of Entrepreneurship",
+    "Applied Mechanics (Statics) (ENG)": "Applied Mechanics (Statics)",
+    "Fluid Mechanics (ENG)": "Fluid Mechanics",
+    "Introduction to Solid Mechanics (Including Lab) (ENG)": "Introduction to Solid Mechanics",
+    "Computational and Statistical Methods (ENG)": "Computational and Statistical Methods",
+    "Principles of Numerical Methods (ENG)": "Principles of Numerical Methods",
+    "Ecology - Ecosystem (ENG)": "N/A",
+    "Economic Thinking (ENG)": "N/A",
+    "Principles of Engineering Economy (ENG)": "N/A",
+    "Applied Mechanics II (Dynamics) (ENG)": "N/A",
+    "Applied Hydraulics (Including Lab) (ENG)": "N/A",
+    "Biology for Engineers (ENG)": "N/A",
+    "Civil Engineering Computer Applications (GIS) (ENG)": "N/A",
+    "Computer Graphics for the Built Environment (ENG)": "N/A",
+    "Construction and Culture (ENG)": "N/A",
+    "Environmental Engineering (ENG)": "N/A",
+    "Geotechnical Engineering (Including Lab) (ENG)": "N/A",
+    "Introduction to Civil Engineering (ENG)": "N/A",
+    "Introduction to Engineering Materials (ENG)": "N/A",
+    "Introduction to Transportation Engineering (ENG)": "N/A",
+    "Reinforced Concrete Design (ENG)": "N/A",
+    "Soil Mechanics and Foundations (ENG)": "N/A",
+    "Structural Analysis I (ENG)": "N/A",
+    "Structural Analysis II (ENG)": "N/A",
+    "Surveying for Civil Engineering and Construction (ENG)": "N/A",
+  }
+};
+
+const programNames = {
+  compeng: "Computer Engineering (International)",
+  compsc: "Computer Science",
+  eleceng: "Electrical and Electronic Engineering"
+};
+
+function renderTable() {
+  const tbody = document.getElementById('courseBody');
+  tbody.innerHTML = courses.map(c =>
+    `<tr><td>${c.name}</td><td class="${c.passed ? 'yes' : 'no'}">${c.passed ? 'Yes' : 'No'}</td></tr>`
+  ).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#courseBody tr').forEach(row => {
+    row.style.display = row.cells[0].textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function transfer() {
+  const prog = document.getElementById('programSelect').value;
+  if (!prog) { alert('Please select a target program first.'); return; }
+  const map = equivalencies[prog];
+  const passed = courses.filter(c => c.passed);
+  const tbody = document.getElementById('equivBody');
+  tbody.innerHTML = passed.map(c => {
+    const eq = map[c.name] || 'N/A';
+    const cls = eq === 'N/A' ? 'equiv-na' : 'equiv-yes';
+    return `<tr class="${cls}"><td>${c.name}</td><td>${eq}</td></tr>`;
+  }).join('');
+  document.getElementById('resultTitle').textContent = `📋 Equivalency Table — Transfer to ${programNames[prog]}`;
+  const result = document.getElementById('result');
+  result.style.display = 'block';
+  result.scrollIntoView({ behavior: 'smooth' });
+}
+
+renderTable();
+</script>
+</body>
+</html>
